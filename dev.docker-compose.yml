@@ -1,0 +1,43 @@
+version: "3.8"
+
+services:
+  nllb-translate:
+    image: ghcr.io/winstxnhdw/nllb-api:main
+    container_name: nllb-translate
+    environment:
+      - SERVER_PORT=7861
+      - OMP_NUM_THREADS=8
+      - TRANSLATOR_THREADS=8
+      - WORKER_COUNT=1
+    restart: unless-stopped
+    networks:
+      - nllb-net
+
+  nllb-batch-translator:
+    build: ./batch-translator
+    container_name: nllb-batch-translator
+    environment:
+      - NLLB_URL=http://nllb-translate:7861/api/v4/translator
+      - MAX_PARALLEL=8
+    restart: unless-stopped
+    networks:
+      - nllb-net
+    depends_on:
+      - nllb-translate
+
+  nllb-caddy-proxy:
+    image: caddy:2-alpine
+    container_name: nllb-caddy-proxy
+    ports:
+      - "7860:7860"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+    restart: unless-stopped
+    networks:
+      - nllb-net
+    depends_on:
+      - nllb-batch-translator
+
+networks:
+  nllb-net:
+    driver: bridge

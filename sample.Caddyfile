@@ -1,0 +1,9 @@
+:7860 {
+    @auth header Authorization "Bearer YOUR_SECRET_TOKEN"
+
+    handle @auth {
+        reverse_proxy nllb-batch-translator:8000
+    }
+
+    respond "Unauthorized" 401
+}
